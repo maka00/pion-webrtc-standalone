@@ -1,0 +1,6 @@
+pre-commit:
+  commands:
+    lint:
+      run: |
+        echo $PATH 
+        go-task lint

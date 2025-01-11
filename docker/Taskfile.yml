@@ -1,0 +1,76 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+tasks:
+
+  echo:
+    desc: debug
+    cmds:
+      - |
+        echo {{.ARCHITECTURE}}
+  run-server:
+    desc: "run the server container on video10 and video11. 
+        Add environment vars and volume mappings to have a custom client ui
+        -e ROOTDIR=/static 
+        -v $(pwd)/data:/static "
+
+    cmds:
+      - |
+        docker run -it --rm \
+        --device /dev/video10 \
+        --device /dev/video11 \
+        --network host \
+        -e PIPELINE="v4l2src device=/dev/video10 ! videoconvert ! vp8enc target-bitrate=3000000 keyframe-max-dist=240 deadline=1 ! appsink name=sink" \
+        --name live-stream \
+        pion-webrtc-server:1.0
+  build-server:
+    desc: build the docker container set with ARCH="linux/amd64""
+    cmds:
+      - |
+        docker build \
+        --platform linux/amd64 \
+        --build-arg PLATFORM=amd64 \
+        -t pion-webrtc-server:1.0 \
+        -f docker/server.dockerfile \
+        .
+  build-server-arm:
+    desc: build the docker container set with ARCH="linux/arm64""
+    cmds:
+      - |
+        docker build \
+        --platform linux/arm64 \
+        --build-arg PLATFORM=arm64v8 \
+        -t pion-webrtc-server:1.0 \
+        -f docker/server.dockerfile \
+        .
+  run-client:
+    desc: run the client
+    cmds:
+      - |
+        docker run -d --rm \
+        --network host \
+        --name live-stream-client \
+        -e WEBRTC_SERVER_LOCATION=ws://localhost:8080/ws \
+        pion-webrtc-client:1.0
+  build-client:
+    desc: build the docker container set with ARCH="linux/amd64"
+    cmds:
+      - |
+        docker build \
+        --platform linux/amd64 \
+        --build-arg PLATFORM=amd64 \
+        -t pion-webrtc-client:1.0 \
+        -f docker/client.dockerfile \
+        .
+  build-client-arm:
+    desc: build the docker container set with ARCH="linux/arm64"
+    cmds:
+      - |
+        docker build \
+        --platform linux/arm64 \
+        --build-arg PLATFORM=arm64v8 \
+        -t pion-webrtc-client:1.0 \
+        -f docker/client.dockerfile \
+        .

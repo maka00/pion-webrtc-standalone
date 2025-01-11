@@ -1,0 +1,2 @@
+PIPELINE:
+"v4l2src device=/dev/video10 ! videoconvert ! vp8enc target-bitrate=3000000 keyframe-max-dist=240 deadline=1 ! appsink name=sink"
