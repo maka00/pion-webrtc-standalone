@@ -27,7 +27,13 @@ RUN go build .
 FROM ${PLATFORM}/debian:bookworm
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -qq -y install \
-    gstreamer1.0*
+    gstreamer1.0-libav \
+    gstreamer1.0-libcamera \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-tools
 
 COPY --from=builder /opt/app/pion-webrtc /opt/app/pion-webrtc
 COPY --from=builder /opt/app/static /opt/app/static

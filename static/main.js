@@ -20,10 +20,6 @@ class Peer {
                 var enc = new TextDecoder("utf-8")
                 let data = enc.decode(event.data)
                 console.log("datachannel: ", enc.decode(event.data))
-                const messageDiv = document.getElementById("server-message");
-                const newDiv = document.createElement('div');
-                newDiv.innerHTML = data;
-                messageDiv.appendChild(newDiv);
             }
             console.log("ondatachannel", event)
         }
@@ -72,8 +68,6 @@ class Signaler {
     }
     onMessage(messageEvent) {
         console.log(messageEvent.data);
-        const messageDiv = document.getElementById("server-message");
-        messageDiv.innerHTML = messageEvent.data;
         let msg = JSON.parse(messageEvent.data)
         if (msg.type === "sessionDescription") {
             console.log("got a sessionDescription")
