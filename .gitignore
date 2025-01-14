@@ -1,3 +1,4 @@
 .idea
 *.tar
+*.tar.gz
 pion-webrtc

@@ -52,7 +52,10 @@ in order to get the encoded frames.`,
 		datachan := datachannel.NewDataPump(cdata)
 		datachan.Start()
 
-		vid := gstreamer.NewVideo(pipeline, cframes)
+		vid := gstreamer.NewGstVideo(pipeline, cframes)
+		if err := vid.Initialize(); err != nil {
+			log.Fatalf("Error initializing gstreamer: %v", err)
+		}
 		vid.Run()
 
 		select {}
