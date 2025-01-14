@@ -6,6 +6,8 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof" //nolint:gosec
 	"os"
 	"pion-webrtc/internal/application"
 	"pion-webrtc/internal/datachannel"
@@ -30,7 +32,9 @@ in order to get the encoded frames.`,
 	Run: func(_ *cobra.Command, _ []string) {
 		pipeline := viper.GetString("PIPELINE")
 		log.Println(pipeline)
-
+		go func() {
+			fmt.Println(http.ListenAndServe("localhost:6060", nil)) //nolint:gosec
+		}()
 		rootDir := "static"
 		if viper.GetString("ROOTDIR") != "" {
 			rootDir = viper.GetString("ROOTDIR")

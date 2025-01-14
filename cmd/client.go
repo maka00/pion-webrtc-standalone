@@ -54,10 +54,14 @@ func getWebSocket(urlstring string) (*websocket.Conn, error) {
 		return nil, fmt.Errorf("error parsing url: %w", err)
 	}
 
-	con, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	con, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating websocket: %w", err)
 	}
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	return con, nil
 }
