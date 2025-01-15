@@ -15,8 +15,6 @@ tasks:
         Add environment vars and volume mappings to have a custom client ui
         -e ROOTDIR=/static 
         -v $(pwd)/data:/static "
-    #-e PIPELINE="v4l2src device=/dev/video10 ! queue ! videoconvert ! vp8enc target-bitrate=3000000 keyframe-max-dist=240 deadline=1 ! queue ! appsink emit-signals=true name=sink" \
-
     cmds:
       - |
         docker run -it --rm \
@@ -41,7 +39,7 @@ tasks:
         --device /dev/video11 \
         --network host \
         -e GST_DEBUG=3 \
-        -e PIPELINE="v4l2src device=/dev/video10 ! queue ! videoconvert ! vp8enc target-bitrate=300000 keyframe-max-dist=240 deadline=1 ! queue ! appsink emit-signals=true name=sink" \
+        -e PIPELINE="v4l2src device=/dev/video10 ! queue ! videoconvert ! vp8enc target-bitrate=3000000 keyframe-max-dist=240 deadline=1 ! queue ! appsink emit-signals=true name=sink" \
         --name live-stream \
         pion-webrtc-server:1.0
   build-server:

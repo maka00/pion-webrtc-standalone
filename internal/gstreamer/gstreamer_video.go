@@ -19,9 +19,7 @@ func onBusMessage(msgType *C.char, msg *C.char, id C.int) {
 }
 
 //export onNewFrame
-func onNewFrame(frame unsafe.Pointer, size C.int, duration C.int, id C.int) {
-	log.Printf("new frame (%d) size: %d duration: %d\n", id, size, duration)
-
+func onNewFrame(frame unsafe.Pointer, size C.int, duration C.int, _ C.int) {
 	frameBytes := C.GoBytes(frame, size) //nolint:nlreturn
 
 	pipeline.ch <- dto.VideoFrame{

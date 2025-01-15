@@ -1,19 +1,16 @@
 ARG PLATFORM=amd64
-FROM ${PLATFORM}/golang:1.23.4-bookworm AS builder
+FROM ${PLATFORM}/golang:1.23.4-alpine AS builder
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -qq -y install \
+RUN apk update && apk add --no-cache \
   curl \
-  gstreamer1.0* \
-  wget \
-  build-essential \
-  pkg-config \
-  libgstreamer1.0-dev \
-  libgstreamer-plugins-base1.0-dev \
-  libgstreamer-plugins-bad1.0-dev \
   unzip
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -qq -y install \
-  git
+RUN apk update && apk add --no-cache \
+  gstreamer-dev \
+  gst-plugins-base-dev \
+  gst-plugins-bad-dev
+
+RUN apk add --no-cache git make build-base
 
 
 RUN sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
@@ -24,16 +21,13 @@ COPY .. /opt/app/
 WORKDIR /opt/app
 RUN go build .
 
-FROM ${PLATFORM}/debian:bookworm
+FROM ${PLATFORM}/alpine
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -qq -y install \
-    gstreamer1.0-libav \
-    gstreamer1.0-libcamera \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-ugly \
-    gstreamer1.0-tools
+RUN apk update && apk add --no-cache \
+  gst-vaapi \
+  gstreamer \
+  gst-plugins-good \
+  gstreamer-tools
 
 COPY --from=builder /opt/app/pion-webrtc /opt/app/pion-webrtc
 COPY --from=builder /opt/app/static /opt/app/static
