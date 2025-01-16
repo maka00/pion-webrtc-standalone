@@ -1,4 +1,5 @@
 .idea
 *.tar
 *.tar.gz
+.env
 pion-webrtc
