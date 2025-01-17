@@ -8,6 +8,7 @@ import "C"
 import (
 	"errors"
 	"log"
+	"os"
 	"pion-webrtc/internal/dto"
 	"time"
 	"unsafe"
@@ -16,6 +17,7 @@ import (
 //export onBusMessage
 func onBusMessage(msgType *C.char, msg *C.char, id C.int) {
 	log.Printf("BusMessage(%d): %s(%s)", id, C.GoString(msgType), C.GoString(msg))
+	os.Exit(1)
 }
 
 //export onNewFrame
