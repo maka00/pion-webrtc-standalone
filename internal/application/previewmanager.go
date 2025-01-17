@@ -64,6 +64,7 @@ func (prma *PreviewManager) onSignallerClient(client *signalling.WebrtcClient) {
 }
 
 func (prma *PreviewManager) onClose(client *signalling.Client) {
+	log.Println("client disconnected...")
 	prma.clientMtx.Lock()
 	defer func() {
 		prma.clientMtx.Unlock()

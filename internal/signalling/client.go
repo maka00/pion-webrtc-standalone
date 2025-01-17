@@ -84,6 +84,11 @@ func (c *Client) SetCloseHandler(f func(clnt *Client)) {
 
 func (c *Client) dispose() {
 	fmt.Println("closed")
+
+	if err := c.conn.Close(); err != nil {
+		fmt.Println("error closing connection")
+	}
+
 	c.disposeHandler(c)
 }
 

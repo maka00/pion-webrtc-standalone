@@ -34,6 +34,7 @@ gboolean gstreamer_bus_watch(GstBus *bus, GstMessage *msg, void* user_data) {
             if (self) {
                 onBusMessage("ERROR", error->message, self->id);
                 g_free(debug_info);
+                exit(1);
                 //g_main_loop_quit(self->loop);
                 //g_main_loop_unref(self->loop);
             }
