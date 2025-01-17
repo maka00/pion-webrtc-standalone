@@ -8,8 +8,8 @@ extern void onBusMessage(char *message_type, char *message, int id);
 
 void gstreamer_init();
 
-void gstreamer_start_main_loop(void* state);
-void gstreamer_stop_main_loop(void* state);
+void gstreamer_start_main_loop();
+void gstreamer_stop_main_loop();
 
 void gstreamer_deinit();
 

@@ -30,8 +30,22 @@ Use the PIPELINE environment variable to define the
 GStreamer pipeline. One element must be named sink 
 in order to get the encoded frames.`,
 	Run: func(_ *cobra.Command, _ []string) {
-		pipeline := viper.GetString("PIPELINE")
-		log.Println(pipeline)
+		nrOfPipelines := viper.GetInt("PIPELINES")
+		log.Printf("nr of pipelines to start: %d", nrOfPipelines)
+
+		var pipelines []string
+		for pipelineID := range nrOfPipelines {
+			pipelineEnv := fmt.Sprintf("PIPELINE_%d", pipelineID)
+			if pipelineEnv == "" {
+				log.Fatalf("PIPELINE_%d not set", pipelineID)
+			}
+			pipelineStr := viper.GetString(pipelineEnv)
+			if pipelineStr == "" {
+				log.Fatalf("PIPELINE_%d not set", pipelineID)
+			}
+			log.Printf("pipeline %d: %s", pipelineID, pipelineStr)
+			pipelines = append(pipelines, pipelineStr)
+		}
 		go func() {
 			fmt.Println(http.ListenAndServe("localhost:6060", nil)) //nolint:gosec
 		}()
@@ -47,7 +61,7 @@ in order to get the encoded frames.`,
 
 		cdata := make(chan string)
 		cframes := make(chan dto.VideoFrame)
-		prevManager := application.NewPreviewManager(sigCli, cdata, cframes)
+		prevManager := application.NewPreviewManager(sigCli, cdata, cframes, nrOfPipelines)
 
 		prevManager.Init()
 		srv.Start()
@@ -56,7 +70,7 @@ in order to get the encoded frames.`,
 		datachan := datachannel.NewDataPump(cdata)
 		datachan.Start()
 
-		vid := gstreamer.NewGstVideo(pipeline, cframes)
+		vid := gstreamer.NewGstVideo(pipelines, cframes)
 		if err := vid.Initialize(); err != nil {
 			log.Fatalf("Error initializing gstreamer: %v", err)
 		}
@@ -96,6 +110,6 @@ func initServerConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+		_, _ = fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
 }

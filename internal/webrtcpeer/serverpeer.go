@@ -2,6 +2,7 @@ package webrtcpeer
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"pion-webrtc/internal/dto"
 	"pion-webrtc/internal/signalling"
@@ -15,10 +16,11 @@ type PeerServer struct {
 	signaller         signalling.SignallingAdapter
 	pendingCandidates []*webrtc.ICECandidate
 	datachannel       *webrtc.DataChannel
-	track             *webrtc.TrackLocalStaticSample
+	track             map[int]*webrtc.TrackLocalStaticSample
+	pipelineSources   int
 }
 
-func NewPeer(adapter signalling.SignallingAdapter) *PeerServer {
+func NewPeer(adapter signalling.SignallingAdapter, pipelineSources int) *PeerServer {
 	config := webrtc.Configuration{} //nolint:exhaustruct
 
 	peerCon, err := webrtc.NewPeerConnection(config)
@@ -31,7 +33,8 @@ func NewPeer(adapter signalling.SignallingAdapter) *PeerServer {
 		signaller:         adapter,
 		pendingCandidates: make([]*webrtc.ICECandidate, 0),
 		datachannel:       nil,
-		track:             nil,
+		track:             make(map[int]*webrtc.TrackLocalStaticSample),
+		pipelineSources:   pipelineSources,
 	}
 }
 
@@ -58,15 +61,20 @@ func (peer *PeerServer) ConfigSignaller() {
 			log.Println("Data channel open")
 		})
 
-		peer.track, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{ //nolint:exhaustruct
-			MimeType: "video/vp8",
-		}, "video", "pion")
-		if err != nil {
-			log.Fatalf("Error creating track: %v", err.Error())
-		}
+		for pipelineID := range peer.pipelineSources {
+			streamID := fmt.Sprintf("pipeline-%d", pipelineID)
 
-		if _, err := peer.PeerConnection.AddTrack(peer.track); err != nil {
-			log.Fatalf("Error adding track: %v", err.Error())
+			track, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{ //nolint:exhaustruct
+				MimeType: "video/vp8",
+			}, "video", streamID)
+			if err != nil {
+				log.Fatalf("Error creating track: %v", err.Error())
+			}
+
+			peer.track[pipelineID] = track
+			if _, err := peer.PeerConnection.AddTrack(peer.track[pipelineID]); err != nil {
+				log.Fatalf("Error adding track: %v", err.Error())
+			}
 		}
 	}
 }
@@ -83,7 +91,14 @@ func (peer *PeerServer) SendMessage(message string) {
 }
 
 func (peer *PeerServer) SendFrame(frame dto.VideoFrame) {
-	if err := peer.track.WriteSample(media.Sample{ //nolint:exhaustruct
+	track, ok := peer.track[frame.Source]
+	if !ok {
+		log.Printf("track %d not found", frame.Source)
+
+		return
+	}
+
+	if err := track.WriteSample(media.Sample{ //nolint:exhaustruct
 		Data:     frame.Frame,
 		Duration: frame.Duration,
 	}); err != nil {

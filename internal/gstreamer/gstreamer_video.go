@@ -19,44 +19,49 @@ func onBusMessage(msgType *C.char, msg *C.char, id C.int) {
 }
 
 //export onNewFrame
-func onNewFrame(frame unsafe.Pointer, size C.int, duration C.int, _ C.int) {
+func onNewFrame(frame unsafe.Pointer, size C.int, duration C.int, pipelineID C.int) {
 	frameBytes := C.GoBytes(frame, size) //nolint:nlreturn
 
 	pipeline.ch <- dto.VideoFrame{
 		Frame:    frameBytes,
 		Duration: time.Duration(duration),
+		Source:   int(pipelineID),
 	}
 }
 
 type GstVideo struct {
 	ch          chan dto.VideoFrame
-	strPipeline string
-	pipe        unsafe.Pointer
+	strPipeline []string
+	pipe        []unsafe.Pointer
 }
 
 var pipeline *GstVideo //nolint:gochecknoglobals
 var errPipeline = errors.New("error creating pipeline")
 
-func NewGstVideo(pipelineStr string, ch chan dto.VideoFrame) *GstVideo {
+func NewGstVideo(pipelineStr []string, ch chan dto.VideoFrame) *GstVideo {
 	C.gstreamer_init()
 
 	pipeline = &GstVideo{
 		ch:          ch,
 		strPipeline: pipelineStr,
-		pipe:        nil,
+		pipe:        make([]unsafe.Pointer, 0),
 	}
 
 	return pipeline
 }
 
 func (gvid *GstVideo) Initialize() error {
-	pipelineCString := C.CString(gvid.strPipeline)
+	for id, pipeline := range gvid.strPipeline {
+		pipelineCString := C.CString(pipeline)
 
-	defer C.free(unsafe.Pointer(pipelineCString)) //nolint:nlreturn
+		defer C.free(unsafe.Pointer(pipelineCString)) //nolint:nlreturn
 
-	gvid.pipe = C.gstreamer_prepare_pipelines(pipelineCString, 1)
-	if gvid.pipe == nil {
-		return errPipeline
+		singlePipe := C.gstreamer_prepare_pipelines(pipelineCString, C.int(id))
+		if singlePipe == nil {
+			return errPipeline
+		}
+
+		gvid.pipe = append(gvid.pipe, singlePipe)
 	}
 
 	return nil
@@ -64,14 +69,20 @@ func (gvid *GstVideo) Initialize() error {
 
 func (gvid *GstVideo) Run() {
 	go func() {
-		C.gstreamer_start_main_loop(gvid.pipe)
+		C.gstreamer_start_main_loop()
 	}()
-	C.gstreamer_start_pipeline(gvid.pipe)
+
+	for _, pipe := range gvid.pipe {
+		C.gstreamer_start_pipeline(pipe)
+	}
 }
 
 func (gvid *GstVideo) Stop() {
-	C.gstreamer_stop_pipeline(gvid.pipe)
-	C.gstreamer_stop_main_loop(gvid.pipe)
+	for _, pipe := range gvid.pipe {
+		C.gstreamer_stop_pipeline(pipe)
+	}
+
+	C.gstreamer_stop_main_loop()
 }
 
 func (gvid *GstVideo) Dispose() {

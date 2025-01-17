@@ -7,10 +7,10 @@
 void gstreamer_on_new_sample(GstAppSink *appsink, void* user_data);
 
 gboolean gstreamer_bus_watch(GstBus *bus, GstMessage *msg, void *user_data);
+static GMainLoop *loop = NULL;
 
 typedef struct {
     GstElement *pipeline;
-    GMainLoop *loop;
     guint bus_watch_id;
     int id;
 } t_gstreamer_wrapper;
@@ -36,7 +36,6 @@ gboolean gstreamer_bus_watch(GstBus *bus, GstMessage *msg, void* user_data) {
                 g_free(debug_info);
                 exit(1);
                 //g_main_loop_quit(self->loop);
-                //g_main_loop_unref(self->loop);
             }
             break;
         }
@@ -47,8 +46,6 @@ gboolean gstreamer_bus_watch(GstBus *bus, GstMessage *msg, void* user_data) {
                 if (self->pipeline) {
                     gst_element_set_state(self->pipeline, GST_STATE_NULL);
                 }
-                //g_main_loop_quit(self->loop);
-                //g_main_loop_unref(self->loop);
             }
             break;
         }
@@ -120,16 +117,14 @@ void gstreamer_start_pipeline(void *state) {
 }
 
 void gstreamer_start_main_loop(void* state) {
-    t_gstreamer_wrapper *self = (t_gstreamer_wrapper *) state;
-    self->loop = g_main_loop_new(NULL, FALSE);
-    g_main_loop_run(self->loop);
+    loop = g_main_loop_new(NULL, FALSE);
+    g_main_loop_run(loop);
 }
 
-void gstreamer_stop_main_loop(void* state) {
-    t_gstreamer_wrapper *self = (t_gstreamer_wrapper *) state;
-    if (self->loop != NULL) {
-        g_main_loop_quit(self->loop);
-        g_main_loop_unref(self->loop);
+void gstreamer_stop_main_loop() {
+    if (loop != NULL) {
+        g_main_loop_quit(loop);
+        g_main_loop_unref(loop);
     }
 }
 
