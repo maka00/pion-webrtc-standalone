@@ -46,6 +46,16 @@ in order to get the encoded frames.`,
 			log.Printf("pipeline %d: %s", pipelineID, pipelineStr)
 			pipelines = append(pipelines, pipelineStr)
 		}
+
+		transmitAudio := false
+
+		audioPipeline := viper.GetString("AUDIO_PIPELINE")
+		if audioPipeline != "" {
+			log.Printf("audio pipeline: %s", audioPipeline)
+			pipelines = append(pipelines, audioPipeline)
+			transmitAudio = true
+			nrOfPipelines++
+		}
 		go func() {
 			fmt.Println(http.ListenAndServe("localhost:6060", nil)) //nolint:gosec
 		}()
@@ -61,7 +71,7 @@ in order to get the encoded frames.`,
 
 		cdata := make(chan string)
 		cframes := make(chan dto.VideoFrame)
-		prevManager := application.NewPreviewManager(sigCli, cdata, cframes, nrOfPipelines)
+		prevManager := application.NewPreviewManager(sigCli, cdata, cframes, nrOfPipelines, transmitAudio)
 
 		prevManager.Init()
 		srv.Start()

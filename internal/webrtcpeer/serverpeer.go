@@ -18,9 +18,10 @@ type PeerServer struct {
 	datachannel       *webrtc.DataChannel
 	track             map[int]*webrtc.TrackLocalStaticSample
 	pipelineSources   int
+	transmitAudio     bool
 }
 
-func NewPeer(adapter signalling.SignallingAdapter, pipelineSources int) *PeerServer {
+func NewPeer(adapter signalling.SignallingAdapter, pipelineSources int, transmitAudio bool) *PeerServer {
 	config := webrtc.Configuration{} //nolint:exhaustruct
 
 	peerCon, err := webrtc.NewPeerConnection(config)
@@ -35,6 +36,7 @@ func NewPeer(adapter signalling.SignallingAdapter, pipelineSources int) *PeerSer
 		datachannel:       nil,
 		track:             make(map[int]*webrtc.TrackLocalStaticSample),
 		pipelineSources:   pipelineSources,
+		transmitAudio:     transmitAudio,
 	}
 }
 
@@ -61,20 +63,49 @@ func (peer *PeerServer) ConfigSignaller() {
 			log.Println("Data channel open")
 		})
 
-		for pipelineID := range peer.pipelineSources {
-			streamID := fmt.Sprintf("pipeline-%d", pipelineID)
+		videoPipelines := peer.pipelineSources
+		if peer.transmitAudio {
+			videoPipelines--
+		}
 
-			track, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{ //nolint:exhaustruct
-				MimeType: "video/vp8",
-			}, "video", streamID)
-			if err != nil {
-				log.Fatalf("Error creating track: %v", err.Error())
-			}
+		peer.addVideoTracks(videoPipelines)
 
-			peer.track[pipelineID] = track
-			if _, err := peer.PeerConnection.AddTrack(peer.track[pipelineID]); err != nil {
-				log.Fatalf("Error adding track: %v", err.Error())
-			}
+		if peer.transmitAudio {
+			peer.addAudioTrack(videoPipelines)
+		}
+	}
+}
+
+func (peer *PeerServer) addAudioTrack(audioPipelineID int) {
+	streamID := fmt.Sprintf("audio-%d", audioPipelineID)
+
+	track, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{ //nolint:exhaustruct
+		MimeType: "audio/opus",
+	}, "audio", streamID)
+	if err != nil {
+		log.Fatalf("Error creating track: %v", err.Error())
+	}
+
+	peer.track[audioPipelineID] = track
+	if _, err := peer.PeerConnection.AddTrack(peer.track[audioPipelineID]); err != nil {
+		log.Fatalf("Error adding track: %v", err.Error())
+	}
+}
+
+func (peer *PeerServer) addVideoTracks(videoPipelines int) {
+	for pipelineID := range videoPipelines {
+		streamID := fmt.Sprintf("pipeline-%d", pipelineID)
+
+		track, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{ //nolint:exhaustruct
+			MimeType: "video/vp8",
+		}, "video", streamID)
+		if err != nil {
+			log.Fatalf("Error creating track: %v", err.Error())
+		}
+
+		peer.track[pipelineID] = track
+		if _, err := peer.PeerConnection.AddTrack(peer.track[pipelineID]); err != nil {
+			log.Fatalf("Error adding track: %v", err.Error())
 		}
 	}
 }

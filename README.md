@@ -41,6 +41,7 @@ To start the server, run the following command:
 export PIPELINES=2
 export PIPELINE_0="v4l2src device=/dev/video10 ! videoconvert ! vp8enc target-bitrate=1500000 keyframe-max-dist=240 deadline=1 ! appsink name=sink"
 export PIPELINE_1="v4l2src device=/dev/video11 ! videoconvert ! vp8enc target-bitrate=1500000 keyframe-max-dist=240 deadline=1 ! appsink name=sink"
+export AUDIO_PIPELINE="alsasrc device=hw:4,0 ! audiorate ! audioconvert ! opusenc ! appsink emit-signals=true name=sink"
 go run main.go
 ```
 

@@ -17,12 +17,14 @@ type PreviewManager struct {
 	dataChan        chan string
 	videoChan       chan dto.VideoFrame
 	sources         int
+	transmitAudio   bool
 }
 
 func NewPreviewManager(client *signalling.HTTPSignallerClient,
 	dataChan chan string,
 	video chan dto.VideoFrame,
-	sources int) *PreviewManager {
+	sources int,
+	transmitAudio bool) *PreviewManager {
 	return &PreviewManager{
 		signallerClient: client,
 		webrtcPeer:      make(map[string]*webrtcpeer.PeerServer),
@@ -32,6 +34,7 @@ func NewPreviewManager(client *signalling.HTTPSignallerClient,
 		dataChan:        dataChan,
 		videoChan:       video,
 		sources:         sources,
+		transmitAudio:   transmitAudio,
 	}
 }
 
@@ -50,7 +53,7 @@ func (prma *PreviewManager) onSignallerClient(client *signalling.WebrtcClient) {
 	prma.wsClient[client.ID()].SetCloseHandler(prma.onClose)
 	prma.signaller[client.ID()] = signalling.NewSignaller()
 
-	prma.webrtcPeer[client.ID()] = webrtcpeer.NewPeer(prma.signaller[client.ID()], prma.sources)
+	prma.webrtcPeer[client.ID()] = webrtcpeer.NewPeer(prma.signaller[client.ID()], prma.sources, prma.transmitAudio)
 	prma.webrtcPeer[client.ID()].ConfigSignaller()
 	prma.wsClient[client.ID()].SetOnSessionDescription(func(msg dto.Message) {
 		prma.signaller[client.ID()].OnRemoteOffer(msg)
