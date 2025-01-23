@@ -1,0 +1,28 @@
+<div class="mt-0 p-2 bg-dark text-white" >LiveView</div>
+
+<div class="container-fluid mt-5  ">
+<div class="row row-cols-2">
+  <div
+    *ngFor="let track of mediaStreams"
+    >
+      <div class="col mb-1" *ngIf="track.trackKind === 'video'">
+      <app-videostream
+        [streamMetaData]="track"
+      >
+      </app-videostream>
+      </div>
+      <div *ngIf="track.trackKind === 'audio'">
+        <audio class=""
+               [srcObject]="track.stream"
+               [autoplay]="true"
+               [controls]="true"
+               [muted]="true"
+        ></audio>
+        <div class="bg-light">
+          {{track.stream.id}}<br/>
+        </div>
+      </div>
+
+  </div>
+</div>
+</div>

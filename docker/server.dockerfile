@@ -36,7 +36,30 @@ COPY .. /opt/app/
 #COPY Taskfile.yml /opt/app/Taskfile.yml
 
 WORKDIR /opt/app
-RUN go build .
+RUN task build-server
+
+FROM ubuntu:24.04 AS builder-node
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  curl \
+  git \
+  make \
+  build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  nodejs \
+  npm \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV PATH=/usr/local/bin:$PATH
+RUN sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+
+RUN npm install -g @angular/cli
+
+COPY .. /opt/app/
+WORKDIR /opt/app
+RUN sh -c "task build-client"
 
 FROM ${PLATFORM}/ubuntu:24.04
 
@@ -50,7 +73,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install --no-instal
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/app/pion-webrtc /opt/app/pion-webrtc
-COPY --from=builder /opt/app/static /opt/app/static
+COPY --from=builder-node /opt/app/static /opt/app/static
+
 WORKDIR /opt/app
 
 CMD ["/opt/app/pion-webrtc", "server"]

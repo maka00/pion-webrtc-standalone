@@ -25,6 +25,7 @@ func NewHTTPSignallerClient(r RouteHandler) *HTTPSignallerClient {
 		upgrader: websocket.Upgrader{ //nolint:exhaustruct
 			ReadBufferSize:  bufferSize,
 			WriteBufferSize: bufferSize,
+			CheckOrigin:     func(_ *http.Request) bool { return true },
 		},
 	}
 }

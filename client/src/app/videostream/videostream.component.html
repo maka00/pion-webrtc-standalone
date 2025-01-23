@@ -1,0 +1,11 @@
+<video class="container-fluid "
+       [srcObject]="streamMetaData.stream"
+       [autoplay]="true"
+       [controls]="true"
+       [muted]="true"
+       (loadedmetadata)="onMetadata($event)"
+       (click)="$event.preventDefault(); onVideoClick()"
+></video>
+<div class="bg-light">
+  {{streamMetaData.stream.id}}: {{width}} x {{height}}<br/>
+</div>

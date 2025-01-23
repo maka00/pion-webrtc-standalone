@@ -1,3 +1,4 @@
 PIPELINES: 2
 PIPELINE_0: "v4l2src device=/dev/video10 ! videoconvert ! vp8enc target-bitrate=1500000 keyframe-max-dist=240 deadline=1 ! appsink emit-signals=true name=sink"
 PIPELINE_1: "v4l2src device=/dev/video11 ! videoconvert ! vp8enc target-bitrate=1500000 keyframe-max-dist=240 deadline=1 ! appsink emit-signals=true name=sink"
+AUDIO_PIPELINE: "alsasrc device=hw:0,0 ! audioconvert ! audioresample ! opusenc ! appsink emit-signals=true name=sink"
